@@ -14,3 +14,12 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::group(['namespace' => 'Backend', 'prefix' => 'backend', 'as' => 'backend.'], function () {
+    Route::resource('line', 'LineController');
+
+    Route::group(['as' => 'async.'], function () {
+        Route::post('line-send-message', 'LineController@sendMessage')->name('line-send-message');
+        Route::get('line-enable', 'LineController@enable')->name('line-enable');
+    });
+});
