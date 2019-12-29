@@ -13,3 +13,4 @@ require('./bootstrap');
  */
 
  require('./components/LineSetting');
+ require('./components/LineSendMessage');

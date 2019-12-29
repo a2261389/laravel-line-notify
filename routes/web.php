@@ -17,9 +17,11 @@ Route::get('/', function () {
 
 Route::group(['namespace' => 'Backend', 'prefix' => 'backend', 'as' => 'backend.'], function () {
     Route::resource('line', 'LineController');
+    Route::get('/line-send', 'LineController@sendMessageIndex');
 
-    Route::group(['as' => 'async.'], function () {
+    Route::group(['as' => 'async.', 'prefix' => 'async'], function () {
         Route::post('line-send-message', 'LineController@sendMessage')->name('line-send-message');
+        Route::get('line-list', 'LineController@getLineList')->name('line-list');
         Route::get('line-enable', 'LineController@enable')->name('line-enable');
     });
 });

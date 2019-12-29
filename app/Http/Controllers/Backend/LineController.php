@@ -37,6 +37,11 @@ class LineController extends BaseController
         return view('backend.line.create');
     }
 
+    public function sendMessageIndex()
+    {
+        return view('backend.line.send');
+    }
+
     public function store(Request $request)
     {
         info($request->all());
@@ -104,6 +109,12 @@ class LineController extends BaseController
         return Redirect::to($lineNotify->authorization());
     }
 
+    public function getLineList()
+    {
+        $notifications = LineNotification::select('id', 'name')->get();
+        return $this->responseJson($notifications, '操作成功', 200);
+    }
+
 
 
     /**
@@ -114,7 +125,39 @@ class LineController extends BaseController
      */
     public function sendMessage(Request $request)
     {
-        //
+        try {
+            $validator = Validator::make($request->all(), [
+                'notify_id' => 'bail|required|exists:line_notifications,id',
+                'message' => 'bail|required',
+            ], [
+                'required' => '此為必填 *',
+                'exists' => '沒有符合的Notify帳戶 *'
+            ]);
+            if ($validator->fails()) {
+                return $this->responseJson($validator->errors(), 'failed', 422);
+            }
+
+            $notify = LineNotification::find($request['notify_id']);
+
+            $data = [
+                "message" => $request['message'],
+                // "imageThumbnail" => "",
+                // "imageFullsize" => "",
+                // "imageFile" => "",
+                // "stickerPackageId" => (int)1, // 表情符號
+                // "stickerId" => (int)1, // 表情符號
+            ];
+
+            $response = $this->line_notify->sendNotify($notify->token, $data);
+            if ($response["status"] != 200) {
+                info($response);
+                return $this->responseJson([], 'Failed: 無法獲取Line Notify Token，請重新操作。', 500);
+            }
+
+            return $this->responseJson([], '操作成功：已成功發出訊息。', 200);
+        } catch (\Throwable $th) {
+            return $this->responseJson([], '操作失敗:' . $th->getMessage(), 500);
+        }
     }
 
     protected function validateRules($model = null)

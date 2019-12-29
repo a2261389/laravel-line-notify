@@ -124,6 +124,7 @@ export default function LineSetting() {
         displayDate: 0,
         displayTime: '',
         code: '',
+        cron: '',
     });
 
     const [data, setData] = useState({ data: {} });
@@ -253,14 +254,12 @@ export default function LineSetting() {
                 <Grid item xs={4}>
                     <Breadcrumbs aria-label="breadcrumb">
                         {
-                            breadcrumbs.map((breadcrumb) => {
+                            breadcrumbs.map((breadcrumb, key) => {
                                 if (breadcrumb.active) {
-                                    return <Typography color="textPrimary">{breadcrumb.name}</Typography>
+                                    return <Typography color="textPrimary" key={key}>{breadcrumb.name}</Typography>
                                 }
                                 return (
-                                    <Link color="inherit" href={breadcrumb.link}>
-                                        {breadcrumb.name}
-                                    </Link>
+                                    <Link color="inherit" href={breadcrumb.link} key={key}>{breadcrumb.name}</Link>
                                 )
                             })
                         }
@@ -300,6 +299,9 @@ export default function LineSetting() {
                             onChange={handlerState('name')}
                             error={hasError('name')}
                             helperText={getErrorMsg('name')}
+                            InputProps={{
+                                value: state.name,
+                            }}
                         />
                     </Box>
                 </Grid>
@@ -320,6 +322,9 @@ export default function LineSetting() {
                             onChange={handlerState('message')}
                             error={hasError('message')}
                             helperText={getErrorMsg('message')}
+                            InputProps={{
+                                value: state.message,
+                            }}
                         />
                     </Box>
                 </Grid>
@@ -344,6 +349,7 @@ export default function LineSetting() {
                                     error={hasError('display_date')}
                                     helperText={getErrorMsg('display_date')}
                                     InputProps={{
+                                        value: state.displayDate,
                                         startAdornment: <InputAdornment position="start">+</InputAdornment>,
                                         endAdornment: <InputAdornment position="end">天</InputAdornment>,
                                     }}
@@ -359,6 +365,9 @@ export default function LineSetting() {
                                     error={hasError('display_time')}
                                     helperText={getErrorMsg('display_time')}
                                     disabled={!state.hasDisplayDate}
+                                    InputProps={{
+                                        value: state.displayTime,
+                                    }}
                                 />
                             </Box>
                         </Box>
@@ -378,6 +387,9 @@ export default function LineSetting() {
                             fullWidth
                             error={hasError('cron')}
                             helperText={getErrorMsg('cron')}
+                            InputProps={{
+                                value: state.cron,
+                            }}
                         />
                     </Box>
                 </Grid>
