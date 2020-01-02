@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import TextField from '@material-ui/core/TextField';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -92,7 +92,7 @@ const breadcrumbs = [
 ]
 
 export default function LineSendMessage() {
-    const [isSend, setIsSend] = useState(false);
+    const [alertOpen, setAlertOpen] = useState(false);
     const [state, setState] = useState({
         message: '',
         notify_id: '',
@@ -103,8 +103,58 @@ export default function LineSendMessage() {
         name: ''
     }]);
 
-    const [data, setData] = useState({ data: {} });
-    const [alertOpen, setAlertOpen] = useState(false);
+    const reducerDataFetch = (state, action) => {
+        switch (action.type) {
+            case 'FETCH_INIT':
+                setAlertOpen(false);
+                return {
+                    ...state,
+                    isSend: true,
+                }
+            case 'FETCH_SUCCESS':
+                setAlertOpen(true);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+            case 'FETCH_FAILED':
+                setAlertOpen(true);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+            case 'FETCH_INVALIDATED':
+                setAlertOpen(false);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+        }
+    }
+
+    const [dataFetch, dispatchDataFetch] = useReducer(reducerDataFetch, {
+        isSend: false,
+        response: {
+            status: '',
+            message: '',
+            data: {},
+        },
+    });
 
     const statusCodeColor = (status) => {
         status = parseInt(status);
@@ -113,21 +163,18 @@ export default function LineSendMessage() {
     }
 
     const submitLineSetting = () => {
-        setIsSend(true);
-        setAlertOpen(false);
+        dispatchDataFetch({ type: 'FETCH_INIT' });
         axios.post('/backend/async/line-send-message', {
             message: state.message,
             notify_id: state.notify_id,
-        }).then((res) => {
-            setData(res.data);
-            setAlertOpen(true);
-            setIsSend(false);
+        }).then((response) => {
+            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response });
         }).catch((error) => {
             if (error.response.status !== 422) {
-                setAlertOpen(true);
+                dispatchDataFetch({ type: 'FETCH_FAILED', payload: error.response.data });
+            } else {
+                dispatchDataFetch({ type: 'FETCH_INVALIDATED', payload: error.response.data });
             }
-            setData(error.response.data);
-            setIsSend(false);
         });
     }
 
@@ -135,41 +182,18 @@ export default function LineSendMessage() {
         setState({ ...state, [name]: event.target[type] });
     }
 
-    const getErrorMsg = field => hasError(field) ? data.data[field][0] : '';
-    const hasError = field => !!data.data[field];
+    const getErrorMsg = field => hasError(field) ? dataFetch.response.data[field][0] : '';
+    const hasError = field => !!dataFetch.response.data[field];
 
     const classes = useStyles();
-    const ResponseIcon = variantIcon[statusCodeColor(data.status)];
-
-    const Exception = ({ title, content, open, method }) => {
-        return (
-            <Dialog
-                open={open}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        {content}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => { method(false) }} color="primary">
-                        確認
-                </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
+    const ResponseIcon = variantIcon[statusCodeColor(dataFetch.response.status)];
 
     useEffect(() => {
         axios.get('/backend/async/line-list')
-            .then((res) => {
-                setNotifications(res.data.data);
+            .then((response) => {
+                setNotifications(response.data.data);
             }).catch((error) => {
-                setData(error.response.data);
-                setIsSend(false);
+                dispatchDataFetch({ type: 'FETCH_FAILED', payload: error.response.data });
             });
     }, [])
 
@@ -179,11 +203,11 @@ export default function LineSendMessage() {
                 <Grid item xs />
                 <Grid item xs={4}>
                     {
-                        alertOpen && <SnackbarContent className={classes[statusCodeColor(data.status)]}
+                        alertOpen && <SnackbarContent className={classes[statusCodeColor(dataFetch.response.status)]}
                             message={
                                 <span id="client-snackbar">
                                     <ResponseIcon />
-                                    {data.message}
+                                    {dataFetch.response.message}
                                 </span>
                             }
                             action={[
@@ -283,10 +307,10 @@ export default function LineSendMessage() {
                             fullWidth
                             endIcon={<Icon>send</Icon>}
                             onClick={() => { submitLineSetting() }}
-                            disabled={isSend}
+                            disabled={dataFetch.isSend}
                         >
                             {
-                                isSend ?
+                                dataFetch.isSend ?
                                     <CircularProgress size={24} color="inherit" /> :
                                     <Typography>寄發訊息</Typography>
                             }
