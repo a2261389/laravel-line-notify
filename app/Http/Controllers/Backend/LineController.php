@@ -8,6 +8,7 @@ use App\Services\Line\LineNotify;
 use Illuminate\Support\Facades\Validator;
 use App\Models\LineNotification;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
 
 class LineController extends BaseController
 {
@@ -27,11 +28,6 @@ class LineController extends BaseController
         return view('backend.line.index');
     }
 
-    public function show($id)
-    {
-        //
-    }
-
     public function create()
     {
         return view('backend.line.create');
@@ -44,8 +40,6 @@ class LineController extends BaseController
 
     public function store(Request $request)
     {
-        info($request->all());
-
         $validator = Validator::make($request->all(), $this->validateRules(), $this->validateMessages());
         if ($validator->fails()) {
             return $this->responseJson($validator->errors(), 'failed', 422);
@@ -94,28 +88,83 @@ class LineController extends BaseController
         }
     }
 
-    public function destroy($id)
+    public function show($id)
     {
-        //
+        $notification = LineNotification::find($id);
+        if ($notification) {
+            return $this->responseJson($notification, '操作成功', 200);
+        }
+        return $this->responseJson([], '操作失敗:查無帳戶', 404);
     }
 
-    public function enable()
+    public function edit($id)
     {
-        $lineNotify = new LineNotify(
-            env('LINE_CLIENT_ID'),
-            env('LINE_CLIENT_SECRET'),
-            env('LINE_CALLBACK_URL')
-        );
-        return Redirect::to($lineNotify->authorization());
+        $notification = LineNotification::findOrFail($id);
+        return view('backend.line.edit', compact('id'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $notification = LineNotification::find($id);
+        $validator = Validator::make($request->all(), $this->validateRules($notification), $this->validateMessages());
+
+        if ($validator->fails()) {
+            return $this->responseJson($validator->errors(), 'failed', 422);
+        }
+
+        try {
+            $cron = explode(' ', trim($request['cron']));
+            if (count($cron) !== 5) {
+                return $this->responseJson(['cron' => ['週期規則輸入錯誤 *']], '', 422);
+            }
+
+            $display_date = -1;
+            $display_time = null;
+            if (boolval($request['has_display_date']) && $request['display_date'] >= 0) {
+                $display_date = $request['display_date'];
+                $display_time = $request['display_time'] ?? $display_time;
+            }
+
+            $update = [
+                'name' => $request['name'],
+                'message' => $request['message'],
+                'cron' => $request['cron'],
+                'is_not_reply' => $request['is_not_reply'],
+                'status' => $request['status'],
+                'token' => $request['token'],
+                'display_date' => $display_date,
+                'display_time' => $display_time,
+            ];
+
+            $notification->update($update);
+
+            return $this->responseJson([], '操作成功', 200);
+        } catch (\Throwable $th) {
+            return $this->responseJson([], '操作失敗:' . $th->getMessage(), 500);
+        }
+    }
+
+
+    public function destroy($id)
+    {
+        try {
+            LineNotification::find($id)->delete();
+            return $this->responseJson([], '操作成功', 200);
+        } catch (\Throwable $th) {
+            return $this->responseJson([], '刪除失敗：' . $th->getMessage(), 500);
+        }
     }
 
     public function getLineList()
     {
-        $notifications = LineNotification::select('id', 'name')->get();
+        $notifications = LineNotification::get();
         return $this->responseJson($notifications, '操作成功', 200);
     }
 
-
+    public function enable()
+    {
+        return Redirect::to($this->line_notify->authorization());
+    }
 
     /**
      * 送出Line Notify
@@ -169,8 +218,16 @@ class LineController extends BaseController
             'has_display_date' => 'required|boolean',
             'display_date' => 'required_if:has_display_date,true|integer|min:0',
             'display_time' => 'sometimes|max:255',
-            'code' => 'required',
+            'code' => 'required|unique:line_notifications,token',
         ];
+
+        if (!is_null($model)) {
+            unset($rules['code']);
+            $rules['token'] = [
+                'required',
+                Rule::unique($model->getTable())->ignore($model->id),
+            ];
+        }
 
         return $rules;
     }
@@ -184,6 +241,7 @@ class LineController extends BaseController
             'inter' => '請輸入數字 *',
             'max' => '超過長度 :max *',
             'min' => '不可小於 :min',
+            'unique' => '該欄位內容已被重複使用 *',
         ];
 
         return $messages;
