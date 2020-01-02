@@ -168,7 +168,7 @@ export default function LineSendMessage() {
             message: state.message,
             notify_id: state.notify_id,
         }).then((response) => {
-            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response });
+            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response.data });
         }).catch((error) => {
             if (error.response.status !== 422) {
                 dispatchDataFetch({ type: 'FETCH_FAILED', payload: error.response.data });

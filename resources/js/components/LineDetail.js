@@ -207,7 +207,7 @@ export default function LineDetail({ detailId }) {
             is_not_reply: state.isNotReply,
             status: state.status,
         }).then((response) => {
-            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response });
+            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response.data });
             window.location.href = '/backend/line';
         }).catch((error) => {
             if (error.response.status !== 422) {

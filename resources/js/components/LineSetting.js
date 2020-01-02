@@ -207,7 +207,7 @@ export default function LineSetting() {
             is_not_reply: state.isNotReply,
             status: state.status,
         }).then((response) => {
-            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response });
+            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response.data });
         }).catch((error) => {
             if (error.response.status !== 422) {
                 dispatchDataFetch({ type: 'FETCH_FAILED', payload: error.response.data });
