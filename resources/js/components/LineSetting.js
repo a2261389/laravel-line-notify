@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import TextField from '@material-ui/core/TextField';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -114,7 +114,7 @@ const breadcrumbs = [
 ]
 
 export default function LineSetting() {
-    const [isSend, setIsSend] = useState(false);
+
     const [state, setState] = useState({
         name: '',
         message: '',
@@ -127,9 +127,66 @@ export default function LineSetting() {
         cron: '',
     });
 
-    const [data, setData] = useState({ data: {} });
     const [alertOpen, setAlertOpen] = useState(false);
-    const [hasCodeException, setHasCodeException] = useState(false);
+    const [errorException, setErrorException] = useState({
+        open: false,
+        content: '',
+        title: '',
+        method: function () { },
+    });
+    const reducerDataFetch = (state, action) => {
+        switch (action.type) {
+            case 'FETCH_INIT':
+                setAlertOpen(false);
+                return {
+                    ...state,
+                    isSend: true,
+                }
+            case 'FETCH_SUCCESS':
+                setAlertOpen(true);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+            case 'FETCH_FAILED':
+                setAlertOpen(true);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+            case 'FETCH_INVALIDATED':
+                setAlertOpen(false);
+                return {
+                    ...state,
+                    isSend: false,
+                    response: {
+                        status: action.payload.status,
+                        message: action.payload.message,
+                        data: action.payload.data,
+                    }
+                }
+        }
+    }
+
+    const [dataFetch, dispatchDataFetch] = useReducer(reducerDataFetch, {
+        isSend: false,
+        response: {
+            status: '',
+            message: '',
+            data: {},
+        },
+    });
+
 
     const statusCodeColor = (status) => {
         status = parseInt(status);
@@ -138,8 +195,7 @@ export default function LineSetting() {
     }
 
     const submitLineSetting = () => {
-        setIsSend(true);
-        setAlertOpen(false);
+        dispatchDataFetch({ type: 'FETCH_INIT' });
         axios.post('/backend/line', {
             name: state.name,
             message: state.message,
@@ -150,16 +206,14 @@ export default function LineSetting() {
             code: state.code,
             is_not_reply: state.isNotReply,
             status: state.status,
-        }).then((res) => {
-            setData(res.data);
-            setAlertOpen(true);
-            setIsSend(false);
+        }).then((response) => {
+            dispatchDataFetch({ type: 'FETCH_SUCCESS', payload: response });
         }).catch((error) => {
             if (error.response.status !== 422) {
-                setAlertOpen(true);
+                dispatchDataFetch({ type: 'FETCH_FAILED', payload: error.response.data });
+            } else {
+                dispatchDataFetch({ type: 'FETCH_INVALIDATED', payload: error.response.data });
             }
-            setData(error.response.data);
-            setIsSend(false);
         });
     }
 
@@ -167,11 +221,11 @@ export default function LineSetting() {
         setState({ ...state, [name]: event.target[type] });
     }
 
-    const getErrorMsg = field => hasError(field) ? data.data[field][0] : '';
-    const hasError = field => !!data.data[field];
+    const getErrorMsg = field => hasError(field) ? dataFetch.response.data[field][0] : '';
+    const hasError = field => !!dataFetch.response.data[field];
 
     const classes = useStyles();
-    const ResponseIcon = variantIcon[statusCodeColor(data.status)];
+    const ResponseIcon = variantIcon[statusCodeColor(dataFetch.response.status)];
 
     const getResolveUrl = (inputUrl, param) => {
         let url = new URL(inputUrl);
@@ -180,30 +234,36 @@ export default function LineSetting() {
     }
 
     useEffect(() => {
-        console.log(state.code)
         let param = getResolveUrl(window.location.href, 'code');
         if (param === '') {
-            setHasCodeException(true);
+            setErrorException({
+                open: true,
+                title: '獲取LINE Notify發生錯誤',
+                content: '無法獲取您的LINE Notify資訊，請重新操作。',
+                method: function () {
+                    setErrorException({ ...errorException, open: false })
+                },
+            });
         }
         setState({ ...state, code: param });
     }, []);
 
 
-    const Exception = ({ title, content, open, method }) => {
+    const Exception = ({ props }) => {
         return (
             <Dialog
-                open={open}
+                open={props.open}
                 aria-labelledby="alert-dialog-title"
                 aria-describedby="alert-dialog-description"
             >
-                <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
+                <DialogTitle id="alert-dialog-title">{props.title}</DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        {content}
+                        {props.content}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => { method(false) }} color="primary">
+                    <Button onClick={props.method} color="primary">
                         確認
                 </Button>
                 </DialogActions>
@@ -213,24 +273,17 @@ export default function LineSetting() {
 
     return (
         <div>
-            {
-                hasCodeException && <Exception
-                    title={'獲取Line Notify發生錯誤'}
-                    content={'無法獲取您的Line Notify資訊，請重新操作。'}
-                    open={hasCodeException}
-                    method={setHasCodeException}
-                />
-            }
+            <Exception props={errorException} />
 
             <Grid container spacing={3}>
                 <Grid item xs />
                 <Grid item xs={4}>
                     {
-                        alertOpen && <SnackbarContent className={classes[statusCodeColor(data.status)]}
+                        alertOpen && <SnackbarContent className={classes[statusCodeColor(dataFetch.response.status)]}
                             message={
                                 <span id="client-snackbar">
                                     <ResponseIcon />
-                                    {data.message}
+                                    {dataFetch.response.message}
                                 </span>
                             }
                             action={[
@@ -439,7 +492,7 @@ export default function LineSetting() {
                     <Box mt={3}>
                         <FormControlLabel
                             control={<Switch color="primary" checked={state.isNotReply} onChange={handlerState('isNotReply', 'checked')} />}
-                            label={`[ ${(state.isNotReply ? '開啟' : '取消')} ] 訊息內容最後加上特定日期`}
+                            label={`[ ${(state.isNotReply ? '開啟' : '取消')} ] 訊息內容加上「系統訊息請勿回覆」`}
                         />
                     </Box>
                 </Grid>
@@ -456,10 +509,10 @@ export default function LineSetting() {
                             fullWidth
                             endIcon={<Icon>send</Icon>}
                             onClick={() => { submitLineSetting() }}
-                            disabled={isSend}
+                            disabled={dataFetch.isSend}
                         >
                             {
-                                isSend ?
+                                dataFetch.isSend ?
                                     <CircularProgress size={24} color="inherit" /> :
                                     <Typography>儲存</Typography>
                             }
