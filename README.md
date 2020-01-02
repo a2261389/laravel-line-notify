@@ -41,4 +41,4 @@ LINE_CALLBACK_URL={您的Callback url}
 ---
 
 安裝成功！
-現在可以在網址列上輸入``http://{your project}/line``查看。
+現在可以在網址列上輸入``http://{your project}/backend/line``查看。
