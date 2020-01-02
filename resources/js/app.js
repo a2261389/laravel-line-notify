@@ -12,5 +12,7 @@ require('./bootstrap');
  * or customize the JavaScript scaffolding to fit your unique needs.
  */
 
- require('./components/LineSetting');
- require('./components/LineSendMessage');
+require('./components/LineSetting');
+require('./components/LineSendMessage');
+require('./components/LineList');
+require('./components/LineDetail');
