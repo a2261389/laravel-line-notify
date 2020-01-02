@@ -57,11 +57,6 @@ class LineController extends BaseController
             }
             $token = $response["access_token"];
 
-            $line_notification = new LineNotification;
-            if ($line_notification->where('token', $token)->first()) {
-                return $this->responseJson([], 'Failed: 該Token已被使用。', 500);
-            }
-
             $display_date = -1;
             $display_time = null;
             if (boolval($request['has_display_date']) && $request['display_date'] >= 0) {
@@ -80,7 +75,7 @@ class LineController extends BaseController
                 'display_time' => $display_time,
             ];
 
-            $line_notification->create($update);
+            LineNotification::create($update);
 
             return $this->responseJson([], '操作成功', 200);
         } catch (\Throwable $th) {
@@ -218,14 +213,13 @@ class LineController extends BaseController
             'has_display_date' => 'required|boolean',
             'display_date' => 'required_if:has_display_date,true|integer|min:0',
             'display_time' => 'sometimes|max:255',
-            'code' => 'required|unique:line_notifications,token',
+            'code' => 'required',
         ];
 
         if (!is_null($model)) {
             unset($rules['code']);
             $rules['token'] = [
                 'required',
-                Rule::unique($model->getTable())->ignore($model->id),
             ];
         }
 
@@ -241,7 +235,6 @@ class LineController extends BaseController
             'inter' => '請輸入數字 *',
             'max' => '超過長度 :max *',
             'min' => '不可小於 :min',
-            'unique' => '該欄位內容已被重複使用 *',
         ];
 
         return $messages;
