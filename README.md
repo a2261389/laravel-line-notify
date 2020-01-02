@@ -40,5 +40,11 @@ LINE_CALLBACK_URL={您的Callback url}
 
 ---
 
+6. 設定排程
+於cron加入以下指令執行排程。
+```
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
+```
+
 安裝成功！
 現在可以在網址列上輸入``http://{your project}/backend/line``查看。
