@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import MaterialTable from 'material-table';
+import MaterialTable, { MTableToolbar } from 'material-table';
 import Button from '@material-ui/core/Button';
 import BlockIcon from '@material-ui/icons/Block';
 import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
@@ -19,6 +19,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import Box from '@material-ui/core/Box'
+import MessageIcon from '@material-ui/icons/Message';
 
 const localization = {
     pagination: {
@@ -254,6 +255,10 @@ export default function LineList() {
         );
     }
 
+    const redirectTo = () => {
+        window.location.href = `/backend/line-send`;
+    }
+
     return (
         <div>
             <Exception props={errorException} />
@@ -277,6 +282,22 @@ export default function LineList() {
                         render: rowData => <RowDataDetail rowData={rowData} />
                     }
                 ]}
+                components={{
+                    Toolbar: props => (
+                        <>
+                            <MTableToolbar {...props} />
+                            <div style={{ margin: 10, textAlign: 'right' }}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={redirectTo}
+                            >
+                                <MessageIcon />發送即時訊息
+                            </Button>
+                            </div>
+                        </>
+                    ),
+                }}
                 actions={[
                     {
                         icon: 'edit',
