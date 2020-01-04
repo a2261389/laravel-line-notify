@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="description" content="Line Notify Send Test">
     <meta name="author" content="Tong">
-    <title>---</title>
+    <title>LINE Notify 機器人</title>
     <link href="{{ mix('css/app.css') }}" rel="stylesheet">
 
     @yield('customized-head')
