@@ -11,9 +11,7 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Auth::routes();
 
 Route::group(['namespace' => 'Backend', 'prefix' => 'backend', 'as' => 'backend.'], function () {
     Route::resource('line', 'LineController');
