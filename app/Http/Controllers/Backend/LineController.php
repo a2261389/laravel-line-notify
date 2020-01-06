@@ -42,7 +42,7 @@ class LineController extends BaseController
     {
         $validator = Validator::make($request->all(), $this->validateRules(), $this->validateMessages());
         if ($validator->fails()) {
-            return $this->responseJson($validator->errors(), 'failed', 422);
+            return $this->responseJson($validator->errors(), 'Failed', 422);
         }
 
         try {
@@ -53,7 +53,7 @@ class LineController extends BaseController
 
             $response = $this->line_notify->getToken($request['code']);
             if ($response["status"] != 200) {
-                return $this->responseJson([], 'Failed: 無法獲取Line Notify Token，請重新操作。', 500);
+                return $this->responseJson([], '[失敗] 無法獲取Line Notify Token，請重新操作。', 500);
             }
             $token = $response["access_token"];
 
@@ -77,9 +77,9 @@ class LineController extends BaseController
 
             LineNotification::create($update);
 
-            return $this->responseJson([], '操作成功', 200);
+            return $this->responseJson([], '[完成] 已建立帳戶', 200);
         } catch (\Throwable $th) {
-            return $this->responseJson([], '操作失敗:' . $th->getMessage(), 500);
+            return $this->responseJson([], '[失敗] ' . $th->getMessage(), 500);
         }
     }
 
@@ -87,9 +87,9 @@ class LineController extends BaseController
     {
         $notification = LineNotification::find($id);
         if ($notification) {
-            return $this->responseJson($notification, '操作成功', 200);
+            return $this->responseJson($notification, '[完成] 查詢成功', 200);
         }
-        return $this->responseJson([], '操作失敗:查無帳戶', 404);
+        return $this->responseJson([], '[失敗] 查無帳戶', 404);
     }
 
     public function edit($id)
@@ -104,7 +104,7 @@ class LineController extends BaseController
         $validator = Validator::make($request->all(), $this->validateRules($notification), $this->validateMessages());
 
         if ($validator->fails()) {
-            return $this->responseJson($validator->errors(), 'failed', 422);
+            return $this->responseJson($validator->errors(), 'Failed', 422);
         }
 
         try {
@@ -133,9 +133,9 @@ class LineController extends BaseController
 
             $notification->update($update);
 
-            return $this->responseJson([], '操作成功', 200);
+            return $this->responseJson([], '[完成] 更新成功', 200);
         } catch (\Throwable $th) {
-            return $this->responseJson([], '操作失敗:' . $th->getMessage(), 500);
+            return $this->responseJson([], '[失敗] ' . $th->getMessage(), 500);
         }
     }
 
@@ -144,16 +144,16 @@ class LineController extends BaseController
     {
         try {
             LineNotification::find($id)->delete();
-            return $this->responseJson([], '操作成功', 200);
+            return $this->responseJson([], '[完成] 已刪除', 200);
         } catch (\Throwable $th) {
-            return $this->responseJson([], '刪除失敗：' . $th->getMessage(), 500);
+            return $this->responseJson([], '[失敗] ' . $th->getMessage(), 500);
         }
     }
 
     public function getLineList()
     {
         $notifications = LineNotification::get();
-        return $this->responseJson($notifications, '操作成功', 200);
+        return $this->responseJson($notifications, 'Success', 200);
     }
 
     public function enable()
@@ -178,7 +178,7 @@ class LineController extends BaseController
                 'exists' => '沒有符合的Notify帳戶 *'
             ]);
             if ($validator->fails()) {
-                return $this->responseJson($validator->errors(), 'failed', 422);
+                return $this->responseJson($validator->errors(), 'Failed', 422);
             }
 
             $notify = LineNotification::find($request['notify_id']);
@@ -195,12 +195,12 @@ class LineController extends BaseController
             $response = $this->line_notify->sendNotify($notify->token, $data);
             if ($response["status"] != 200) {
                 info($response);
-                return $this->responseJson([], 'Failed: 無法獲取Line Notify Token，請重新操作。', 500);
+                return $this->responseJson([], '[失敗] 無法獲取Line Notify Token，請重新操作。', 500);
             }
 
-            return $this->responseJson([], '操作成功：已成功發出訊息。', 200);
+            return $this->responseJson([], '[成功] 已成功發出訊息。', 200);
         } catch (\Throwable $th) {
-            return $this->responseJson([], '操作失敗:' . $th->getMessage(), 500);
+            return $this->responseJson([], '[失敗] ' . $th->getMessage(), 500);
         }
     }
 
