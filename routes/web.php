@@ -13,6 +13,8 @@
 
 Auth::routes();
 
+Route::redirect('/', 'login', 301);
+
 Route::group(['namespace' => 'Backend', 'prefix' => 'backend', 'as' => 'backend.'], function () {
     Route::resource('line', 'LineController');
     Route::get('/line-send', 'LineController@sendMessageIndex');
