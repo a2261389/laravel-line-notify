@@ -287,12 +287,12 @@ export default function LineList() {
                         <>
                             <MTableToolbar {...props} />
                             <div style={{ margin: 10, textAlign: 'right' }}>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={redirectTo}
-                            >
-                                <MessageIcon />發送即時訊息
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={redirectTo}
+                                >
+                                    <MessageIcon />發送即時訊息
                             </Button>
                             </div>
                         </>

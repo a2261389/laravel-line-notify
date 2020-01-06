@@ -5,13 +5,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box'
 import Icon from '@material-ui/core/Icon';
-import ErrorIcon from '@material-ui/icons/Error';
-import CloseIcon from '@material-ui/icons/Close';
-import IconButton from '@material-ui/core/IconButton';
-import WarningIcon from '@material-ui/icons/Warning';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import InfoIcon from '@material-ui/icons/Info';
-import SnackbarContent from '@material-ui/core/SnackbarContent';
 import { makeStyles } from '@material-ui/core/styles';
 import { amber, green } from '@material-ui/core/colors';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -20,21 +14,20 @@ import Grid from '@material-ui/core/Grid';
 import Switch from '@material-ui/core/Switch';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import InputAdornment from '@material-ui/core/InputAdornment';
-
 import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import Link from '@material-ui/core/Link';
+import Collapse from '@material-ui/core/Collapse';
+import { Alert, AlertTitle } from '@material-ui/lab';
 
 const useStyles = makeStyles(theme => ({
     success: {
@@ -64,13 +57,6 @@ const useStyles = makeStyles(theme => ({
         display: 'inline',
     }
 }));
-
-const variantIcon = {
-    success: CheckCircleIcon,
-    warning: WarningIcon,
-    error: ErrorIcon,
-    info: InfoIcon,
-};
 
 const cronRules = [
     {
@@ -187,11 +173,10 @@ export default function LineDetail({ detailId }) {
         },
     });
 
-
-    const statusCodeColor = (status) => {
+    const statusCodeToText = (status) => {
         status = parseInt(status);
-        if (status === 200) { return 'success'; }
-        return 'error';
+        if (status === 200) { return ['success', '成功']; }
+        return ['error', '錯誤'];
     }
 
     const submitLineSetting = () => {
@@ -226,7 +211,6 @@ export default function LineDetail({ detailId }) {
     const hasError = field => !!dataFetch.response.data[field];
 
     const classes = useStyles();
-    const ResponseIcon = variantIcon[statusCodeColor(dataFetch.response.status)];
 
     useEffect(() => {
         axios.get(`/backend/line/${detailId}`)
@@ -255,8 +239,6 @@ export default function LineDetail({ detailId }) {
                     }
                 });
             });
-
-
     }, []);
 
 
@@ -288,26 +270,18 @@ export default function LineDetail({ detailId }) {
             <Grid container spacing={3}>
                 <Grid item xs />
                 <Grid item xs={4}>
-                    {
-                        alertOpen && <SnackbarContent className={classes[statusCodeColor(dataFetch.response.status)]}
-                            message={
-                                <span id="client-snackbar">
-                                    <ResponseIcon />
-                                    {dataFetch.response.message}
-                                </span>
-                            }
-                            action={[
-                                <IconButton
-                                    key="close"
-                                    aria-label="close"
-                                    color="inherit"
-                                    onClick={() => { setAlertOpen(false) }}
-                                >
-                                    <CloseIcon />
-                                </IconButton>,
-                            ]}
-                        />
-                    }
+                    <Box mb={3}>
+                        <Collapse in={alertOpen}>
+                            <Alert
+                                variant="filled"
+                                onClose={() => { setAlertOpen(false) }}
+                                severity={statusCodeToText(dataFetch.response.status)[0]}
+                            >
+                                <AlertTitle>{statusCodeToText(dataFetch.response.status)[1]}</AlertTitle>
+                                {dataFetch.response.message}
+                            </Alert>
+                        </Collapse>
+                    </Box>
                 </Grid>
                 <Grid item xs />
             </Grid>
