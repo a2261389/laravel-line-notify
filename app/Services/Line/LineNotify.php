@@ -132,6 +132,7 @@ class LineNotify
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $header = substr($response, 0, $headerSize);
         $response = substr($response, $headerSize);
+        curl_close($ch);
         return $response;
     }
 }
